@@ -1,0 +1,45 @@
+name: ساخت APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'DashMamadDashboard_AndroidProject.zip'
+      - '.github/workflows/build-apk.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: دریافت پروژه
+        uses: actions/checkout@v4
+
+      - name: آماده‌سازی جاوا
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: آماده‌سازی اندروید
+        uses: android-actions/setup-android@v3
+
+      - name: باز کردن پروژه
+        run: |
+          unzip -q DashMamadDashboard_AndroidProject.zip -d project
+          find project -name gradlew -type f -print
+
+      - name: ساخت APK
+        run: |
+          PROJECT_DIR=$(dirname "$(find project -name gradlew -type f -print -quit)")
+          cd "$PROJECT_DIR"
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: تحویل APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: DASHBOARD-APK
+          path: |
+            project/**/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
