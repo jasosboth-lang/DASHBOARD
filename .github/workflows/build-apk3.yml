@@ -1,0 +1,48 @@
+name: ساخت APK نسخه 3
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/build-apk3.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: دریافت پروژه
+        uses: actions/checkout@v4
+
+      - name: آماده سازی جاوا
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: باز کردن پروژه
+        run: |
+          rm -rf project
+          unzip -q DashMamadDashboard_AndroidProject.zip -d project
+          echo "ساختار پروژه:"
+          find project -maxdepth 3 -type f | head -100
+
+      - name: پیدا کردن پروژه اندروید
+        run: |
+          PROJECT_DIR=$(find project -name settings.gradle -o -name settings.gradle.kts | head -1)
+          PROJECT_DIR=$(dirname "$PROJECT_DIR")
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          echo "پروژه: $PROJECT_DIR"
+
+      - name: ساخت APK
+        run: |
+          cd "$PROJECT_DIR"
+          gradle assembleDebug --no-daemon
+
+      - name: تحویل APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: DASHBOARD-APK
+          path: |
+            project/**/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
