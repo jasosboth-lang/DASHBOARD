@@ -1,0 +1,42 @@
+name: ساخت APK نسخه 2
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/build-apk2.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: دریافت پروژه
+        uses: actions/checkout@v4
+
+      - name: آماده‌سازی جاوا
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: باز کردن پروژه
+        run: |
+          rm -rf project
+          unzip -q DashMamadDashboard_AndroidProject.zip -d project
+          PROJECT_DIR=$(dirname "$(find project -name gradlew -type f -print -quit)")
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+
+      - name: ساخت APK
+        run: |
+          cd "$PROJECT_DIR"
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: تحویل APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: DASHBOARD-APK
+          path: |
+            project/**/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
